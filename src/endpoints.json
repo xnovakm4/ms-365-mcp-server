@@ -1178,6 +1178,42 @@
     "scopes": ["Notes.Read"]
   },
   {
+    "pathPattern": "/me/onenote/pages/{onenotePage-id}/content",
+    "method": "patch",
+    "toolName": "update-onenote-page-content",
+    "presets": ["onenote", "personal"],
+    "scopes": ["Notes.ReadWrite"],
+    "llmTip": "Edits an existing page in place (PATCH). Body: array of commands applied in order. Targets: 'body' (append/prepend only), 'title' (replace), or a generated element id such as 'p:{...}{106}' (no '#'). get-onenote-page-content returns HTML without ids: call download-bytes with target '/me/onenote/pages/{page-id}/content?includeIDs=true', base64-decode contentBytes and read the id attributes. Ids can change after every update, so re-read them before each edit. Actions: append/prepend add a child to body, a div, ol or ul; insert adds a sibling before/after the target (position); replace swaps p, li, h1-h6, table, img, ol/ul, a div inside a div, or the title. There is no delete action: to remove an element, replace it with '<p></p>' (it disappears without a trace; an empty string or whitespace is rejected). Never replace 'body': Graph accepts it and wipes the whole page. Images: prefer data URIs (PNG, JPEG, GIF; SVG is not supported and leaves an empty image). In HTTP mode request bodies are limited to 100 KB, so keep embedded images under ~70 KB. With src=URL OneNote downloads the image itself; if the host blocks it or it does not exist, the call still succeeds but stores a 0-byte image, so check it with download-bytes '/me/onenote/resources/{resource-id}/$value' (contentLength 0 = failed). Omit width/height or keep the real aspect ratio: a wrong ratio stretches the image, width alone keeps the ratio. <pre> becomes a Consolas paragraph that keeps line breaks; <th> becomes a bold centered cell; tables get no borders. Non-ASCII text comes back as HTML entities.",
+    "requestBodySchema": {
+      "type": "array",
+      "description": "Array of patchContentCommand objects applied in order to the page's HTML.",
+      "items": {
+        "type": "object",
+        "required": ["target", "action"],
+        "properties": {
+          "target": {
+            "type": "string",
+            "description": "Element to change: 'body', 'title', a generated id from content?includeIDs=true (no '#'), or '#data-id' for append/insert."
+          },
+          "action": {
+            "type": "string",
+            "enum": ["append", "insert", "prepend", "replace"],
+            "description": "What to do at the target. To remove an element, replace it with '<p></p>'."
+          },
+          "position": {
+            "type": "string",
+            "enum": ["after", "before"],
+            "description": "For 'insert'/'append', whether content goes after (default) or before the target."
+          },
+          "content": {
+            "type": "string",
+            "description": "Well-formed HTML to add (required, must not be empty)."
+          }
+        }
+      }
+    }
+  },
+  {
     "pathPattern": "/sites/{site-id}/onenote/notebooks",
     "method": "get",
     "toolName": "list-sharepoint-site-onenote-notebooks",
